@@ -5,26 +5,56 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>مولد QR بسيط</title>
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Arial;direction:rtl;padding:18px;max-width:720px;margin:0 auto}
+    body{
+      font-family:Inter,system-ui,Segoe UI,Arial;
+      direction:rtl;
+      padding:18px;
+      max-width:720px;
+      margin:0 auto;
+      background-color:#2e5d88;
+      color:#fff;
+    }
     label{display:block;margin-top:12px;font-weight:600}
-    input[type=text], textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:6px}
+    input[type=text], textarea{
+      width:100%;
+      padding:8px;
+      margin-top:6px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-family:inherit;
+    }
+    textarea{resize:vertical;}
     .row{display:flex;gap:8px;align-items:center;margin-top:10px}
-    button{padding:8px 12px;border-radius:8px;border:0;background:#0b74de;color:#fff;cursor:pointer}
-    #qrcode{margin-top:18px;padding:12px;border:1px dashed #ddd;border-radius:8px;display:inline-block}
-    .note{color:#aa0000;margin-top:8px}
+    button{
+      padding:8px 12px;
+      border-radius:8px;
+      border:0;
+      background:#0b74de;
+      color:#fff;
+      cursor:pointer;
+      font-weight:600;
+    }
+    #qrcode{
+      margin-top:18px;
+      padding:12px;
+      border:1px dashed #ccc;
+      border-radius:8px;
+      background:#fff;
+      display:inline-block;
+    }
+    .note{color:#ffbaba;margin-top:8px}
   </style>
-  <!-- QRCode.js من CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
   <h2>مولد QR — بسيط وعملي</h2>
-  <p>أدخل رابط أو نص أو رقم ثم اضغط "إنشاء QR". لتحويل صورة: اختر ملف الصورة. ملاحظة مهمة أسفل الصفحة.</p>
+  <p>أدخل رابط أو نص أو رقم ثم اضغط "إنشاء QR". لتحويل صورة: اختر ملف الصورة.</p>
 
   <label>نص / رابط / رقم</label>
   <textarea id="inputText" rows="2" placeholder="مثال: https://example.com أو 0555123456"></textarea>
 
-  <label>أو: اختر صورة (يمكن تحويلها إلى Data URL ومحاولة تشفيرها داخل QR)</label>
+  <label>أو: اختر صورة</label>
   <input type="file" id="inputFile" accept="image/*">
 
   <div class="row">
@@ -44,8 +74,8 @@
   const downloadBtn = document.getElementById('downloadBtn');
   const message = document.getElementById('message');
 
-  let qrcode; // كائن QR
-  const MAX_RAW_CHARS = 2000; // عتبة عملية: لو DataURL أكبر من هذا نقول لا (تحذير عملي)
+  let qrcode;
+  const MAX_RAW_CHARS = 2000;
 
   function clearQR(){
     qrcodeWrap.innerHTML = '';
@@ -64,8 +94,7 @@
       colorLight : "#ffffff",
       correctLevel : QRCode.CorrectLevel.M
     });
-    // إظهار زر التحميل (نحو PNG)
-    setTimeout(()=>{ // يعطي الـ library وقت للرندر
+    setTimeout(()=>{
       const img = qrcodeWrap.querySelector('img') || qrcodeWrap.querySelector('canvas');
       if(img){
         downloadBtn.style.display = 'inline-block';
@@ -79,28 +108,19 @@
     clearQR();
 
     if(file){
-      // لو اخترت صورة: حولها إلى DataURL أولًا
       const reader = new FileReader();
       reader.onload = function(e){
         const dataURL = e.target.result;
-        // تحذير واقعي: معظم الـ QR لا تقدر تحمل DataURL كبيرة
         if(dataURL.length > MAX_RAW_CHARS){
-          message.innerHTML = "حجم بيانات الصورة كبير جداً لِتشفيرها داخل QR (طول DataURL = " + dataURL.length + ").<br>الحل العملي: ارفع الصورة لموقع/سيرفر (مثلاً Imgur أو س3 أو موقعك) ثم ضع رابط الصورة هنا وولد QR للرابط.";
-          // نعرض خيار تحويل رابط (نصف حل) — لا نقوم برفع الصورة هنا
-          // لكن نعرض أوليات: يمكن توليد QR للـ DataURL لو أردت على مسؤوليتك:
-          const ok = confirm("هل تريد محاولة توليد QR للصورة رغم أنها كبيرة (قد لا تقرأها الأجهزة)؟");
-          if(ok){
-            genQR(dataURL);
-          }
+          message.innerHTML = "حجم بيانات الصورة كبير جدًا لتشفيرها داخل QR.<br>الحل: ارفع الصورة لأي موقع وخذ الرابط لتوليد QR للرابط.";
+          const ok = confirm("تريد المحاولة رغم أن الصورة كبيرة؟");
+          if(ok){ genQR(dataURL); }
         } else {
-          // عملي: لو DataURL صغير، نجرب توليد QR مباشرة
-          message.textContent = "تم تحويل الصورة إلى Data URL وحاولت تشفيرها داخل QR. قد لا تقرأ كل القارئات هذا النوع.";
+          message.textContent = "تم تحويل الصورة إلى Data URL وتجرب تشفيرها داخل QR.";
           genQR(dataURL);
         }
       };
-      reader.onerror = function(){
-        message.textContent = "خطأ بقراءة الملف.";
-      };
+      reader.onerror = ()=> message.textContent = "خطأ بقراءة الملف.";
       reader.readAsDataURL(file);
       return;
     }
@@ -110,41 +130,31 @@
       return;
     }
 
-    // لو النص موجود عادي
-    // نصيحة واقعية: لو النص طويل جداً (مثلاً > 2950 حرف) قد يفشل الـ QR
     if(text.length > 2950){
-      message.innerHTML = "النص طويل جداً لتشفيره داخل QR (طوله " + text.length + " حرف). اختصر النص أو استخدم رابطاً مختصراً (short link).";
+      message.innerHTML = "النص طويل جدًا لتشفيره داخل QR (طوله " + text.length + ").";
       return;
     }
 
     genQR(text);
   });
 
-  // زر التحميل كصورة PNG
   downloadBtn.addEventListener('click',()=>{
-    // يوجد إمّا img أو canvas داخل qrcodeWrap
     const img = qrcodeWrap.querySelector('img');
     if(img){
-      // صورة موجودة كـ <img src="...">
-      const src = img.src;
       const a = document.createElement('a');
-      a.href = src;
+      a.href = img.src;
       a.download = 'qrcode.png';
       a.click();
       return;
     }
     const canvas = qrcodeWrap.querySelector('canvas');
     if(canvas){
-      const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
-      a.href = url;
+      a.href = canvas.toDataURL('image/png');
       a.download = 'qrcode.png';
       a.click();
-      return;
     }
-    message.textContent = "لم أجد QR لتحميله.";
   });
-
 })();
 </script>
 </body>
