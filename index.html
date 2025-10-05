@@ -15,15 +15,15 @@
       color:#fff;
     }
     label{display:block;margin-top:12px;font-weight:600}
-    input[type=text], textarea{
+    textarea{
       width:100%;
       padding:8px;
       margin-top:6px;
       border:1px solid #ccc;
       border-radius:6px;
       font-family:inherit;
+      resize:vertical;
     }
-    textarea{resize:vertical;}
     .row{display:flex;gap:8px;align-items:center;margin-top:10px}
     button{
       padding:8px 12px;
@@ -49,13 +49,10 @@
 <body>
 
   <h2>مولد QR — بسيط وعملي</h2>
-  <p>أدخل رابط أو نص أو رقم ثم اضغط "إنشاء QR". لتحويل صورة: اختر ملف الصورة.</p>
+  <p>أدخل رابط أو نص أو رقم ثم اضغط "إنشاء QR".</p>
 
   <label>نص / رابط / رقم</label>
   <textarea id="inputText" rows="2" placeholder="مثال: https://example.com أو 0555123456"></textarea>
-
-  <label>أو: اختر صورة</label>
-  <input type="file" id="inputFile" accept="image/*">
 
   <div class="row">
     <button id="makeBtn">إنشاء QR</button>
@@ -68,14 +65,11 @@
 <script>
 (function(){
   const inputText = document.getElementById('inputText');
-  const inputFile = document.getElementById('inputFile');
   const makeBtn = document.getElementById('makeBtn');
   const qrcodeWrap = document.getElementById('qrcode');
   const downloadBtn = document.getElementById('downloadBtn');
   const message = document.getElementById('message');
-
   let qrcode;
-  const MAX_RAW_CHARS = 2000;
 
   function clearQR(){
     qrcodeWrap.innerHTML = '';
@@ -96,42 +90,21 @@
     });
     setTimeout(()=>{
       const img = qrcodeWrap.querySelector('img') || qrcodeWrap.querySelector('canvas');
-      if(img){
-        downloadBtn.style.display = 'inline-block';
-      }
+      if(img) downloadBtn.style.display = 'inline-block';
     },100);
   }
 
   makeBtn.addEventListener('click',()=>{
     const text = inputText.value.trim();
-    const file = inputFile.files[0];
     clearQR();
 
-    if(file){
-      const reader = new FileReader();
-      reader.onload = function(e){
-        const dataURL = e.target.result;
-        if(dataURL.length > MAX_RAW_CHARS){
-          message.innerHTML = "حجم بيانات الصورة كبير جدًا لتشفيرها داخل QR.<br>الحل: ارفع الصورة لأي موقع وخذ الرابط لتوليد QR للرابط.";
-          const ok = confirm("تريد المحاولة رغم أن الصورة كبيرة؟");
-          if(ok){ genQR(dataURL); }
-        } else {
-          message.textContent = "تم تحويل الصورة إلى Data URL وتجرب تشفيرها داخل QR.";
-          genQR(dataURL);
-        }
-      };
-      reader.onerror = ()=> message.textContent = "خطأ بقراءة الملف.";
-      reader.readAsDataURL(file);
-      return;
-    }
-
     if(!text){
-      message.textContent = "أدخل نصًا أو رابطًا أو اختر صورة.";
+      message.textContent = "أدخل نصًا أو رابطًا أو رقمًا.";
       return;
     }
 
     if(text.length > 2950){
-      message.innerHTML = "النص طويل جدًا لتشفيره داخل QR (طوله " + text.length + ").";
+      message.innerHTML = "النص طويل جدًا لتشفيره داخل QR (" + text.length + " حرف). اختصره أو استخدم رابط مختصر.";
       return;
     }
 
