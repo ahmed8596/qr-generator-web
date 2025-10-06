@@ -3,86 +3,87 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>QR + اختصار روابط</title>
+  <title>مولد QR بسيط</title>
   <style>
     body{
       font-family:Inter,system-ui,Segoe UI,Arial;
       direction:rtl;
       padding:18px;
-      max-width:760px;
+      max-width:720px;
       margin:0 auto;
       background-color:#2e5d88;
       color:#fff;
     }
-    h2{margin-top:8px}
-    label{display:block;margin-top:12px;font-weight:700}
-    textarea{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:0;font-family:inherit;resize:vertical}
-    .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
-    button{padding:8px 12px;border-radius:8px;border:0;background:#0b74de;color:#fff;cursor:pointer;font-weight:700}
-    #qrcode{margin-top:18px;padding:12px;border-radius:8px;background:#fff;display:inline-block}
-    .note{color:#ffdede;margin-top:8px}
-    .chip{background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:999px;font-size:14px}
-    .linkrow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
-    .smallbtn{padding:6px 8px;border-radius:6px;border:0;background:#2a73b8;color:#fff;cursor:pointer}
-    input[type=checkbox]{transform:scale(1.15);margin-left:8px}
+    label{display:block;margin-top:12px;font-weight:600}
+    textarea{
+      width:100%;
+      padding:8px;
+      margin-top:6px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-family:inherit;
+      resize:vertical;
+    }
+    .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+    button{
+      padding:8px 12px;
+      border-radius:8px;
+      border:0;
+      background:#0b74de;
+      color:#fff;
+      cursor:pointer;
+      font-weight:600;
+    }
+    #qrcode{
+      margin-top:18px;
+      padding:12px;
+      border:1px dashed #ccc;
+      border-radius:8px;
+      background:#fff;
+      display:inline-block;
+    }
+    .note{color:#ffbaba;margin-top:8px}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <h2>مولد QR + اختصار روابط (تلقائي)</h2>
-  <p>أدخل الرابط أو النص (لو أدخلت رابط طويل سيحاول اختصاره أولًا ثم يولد QR من المختصر).</p>
 
-  <label>رابط / نص / رقم</label>
-  <textarea id="inputText" rows="2" placeholder="مثال: https://example.com/very/long/url أو نص عادي"></textarea>
+  <h2>مولد QR — بسيط وعملي</h2>
+  <p>أدخل رابط أو نص أو رقم ثم اضغط "إنشاء QR".</p>
 
-  <div class="controls">
-    <div class="chip"><label style="display:inline">جرب اختصار تلقائي للروابط<input type="checkbox" id="tryShort" checked></label></div>
+  <label>نص / رابط / رقم</label>
+  <textarea id="inputText" rows="2" placeholder="مثال: https://example.com أو 0555123456"></textarea>
+
+  <div class="row">
     <button id="makeBtn">إنشاء QR</button>
     <button id="downloadBtn" style="display:none">تحميل QR كصورة</button>
-    <button id="copyBtn" style="display:none" class="smallbtn">نسخ الرابط</button>
   </div>
 
   <div id="qrcode"></div>
-
-  <div id="linkBox" class="linkrow" style="display:none">
-    <div id="shortLabel" class="chip"></div>
-    <a id="openShort" href="#" target="_blank" style="color:#fff;text-decoration:underline;display:none">افتح الرابط</a>
-  </div>
-
   <div id="message" class="note"></div>
 
 <script>
 (function(){
   const inputText = document.getElementById('inputText');
-  const tryShort = document.getElementById('tryShort');
   const makeBtn = document.getElementById('makeBtn');
   const qrcodeWrap = document.getElementById('qrcode');
   const downloadBtn = document.getElementById('downloadBtn');
   const message = document.getElementById('message');
-  const linkBox = document.getElementById('linkBox');
-  const shortLabel = document.getElementById('shortLabel');
-  const openShort = document.getElementById('openShort');
-  const copyBtn = document.getElementById('copyBtn');
-  let qrcode = null;
-  const MAX_LEN = 2950;
+  let qrcode;
 
-  function clearUI(){
+  function clearQR(){
     qrcodeWrap.innerHTML = '';
-    linkBox.style.display = 'none';
-    shortLabel.textContent = '';
-    openShort.style.display = 'none';
     downloadBtn.style.display = 'none';
-    copyBtn.style.display = 'none';
     message.textContent = '';
     qrcode = null;
   }
 
   function genQR(text){
-    clearUI();
+    clearQR();
     qrcode = new QRCode(qrcodeWrap, {
       text: text,
-      width: 320,
-      height: 320,
+      width: 300,
+      height: 300,
       colorDark : "#000000",
       colorLight : "#ffffff",
       correctLevel : QRCode.CorrectLevel.M
@@ -90,80 +91,27 @@
     setTimeout(()=>{
       const img = qrcodeWrap.querySelector('img') || qrcodeWrap.querySelector('canvas');
       if(img) downloadBtn.style.display = 'inline-block';
-    },120);
+    },100);
   }
 
-  async function shortenWithIsGd(longUrl){
-    // is.gd simple API returns plain text short URL
-    const endpoint = 'https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl);
-    const resp = await fetch(endpoint, { method: 'GET' });
-    if(!resp.ok) throw new Error('Shortener response ' + resp.status);
-    const short = (await resp.text()).trim();
-    // is.gd returns error messages as plain text starting with 'Error:'
-    if(short.toLowerCase().startsWith('error:')) throw new Error(short);
-    return short;
-  }
+  makeBtn.addEventListener('click',()=>{
+    const text = inputText.value.trim();
+    clearQR();
 
-  makeBtn.addEventListener('click', async ()=>{
-    const raw = inputText.value.trim();
-    clearUI();
-
-    if(!raw){
-      message.textContent = 'أدخل رابطاً أو نصاً.';
-      return;
-    }
-    if(raw.length > MAX_LEN){
-      message.textContent = 'النص طويل جداً لتشفيره داخل QR. اختصره أو استخدم رابط مختصر.';
+    if(!text){
+      message.textContent = "أدخل نصًا أو رابطًا أو رقمًا.";
       return;
     }
 
-    // if looks like a URL and user enabled shortening, try to shorten
-    const looksLikeUrl = /^(https?:\/\/)/i.test(raw);
-    if(looksLikeUrl && tryShort.checked){
-      message.textContent = 'جرب اختصار الرابط...';
-      try{
-        const short = await shortenWithIsGd(raw);
-        // نجح الاختصار
-        message.textContent = 'اختصر الرابط بنجاح.';
-        shortLabel.textContent = short;
-        openShort.href = short;
-        openShort.style.display = 'inline-block';
-        linkBox.style.display = 'flex';
-        copyBtn.style.display = 'inline-block';
-        copyBtn.onclick = ()=>{ navigator.clipboard.writeText(short).then(()=>{ message.textContent='تم نسخ الرابط المختصر.'}).catch(()=>{message.textContent='فشل النسخ.'}) };
-        genQR(short);
-        return;
-      } catch(err){
-        // فشل الاختصار (قد يكون CORS أو خطأ خارجي). سنسقط للـ fallback
-        console.warn('shorten failed:', err);
-        message.innerHTML = 'تعذر اختصار الرابط تلقائياً (قيود CORS أو خطأ بالخدمة). سأستخدم الرابط الأصلي لتوليد QR.';
-        genQR(raw);
-        // عرض الرابط الأصلي للنسخ/فتح
-        shortLabel.textContent = raw;
-        openShort.href = raw;
-        openShort.style.display = 'inline-block';
-        linkBox.style.display = 'flex';
-        copyBtn.style.display = 'inline-block';
-        copyBtn.onclick = ()=>{ navigator.clipboard.writeText(raw).then(()=>{ message.textContent='تم نسخ الرابط.'}).catch(()=>{message.textContent='فشل النسخ.'}) };
-        return;
-      }
+    if(text.length > 2950){
+      message.innerHTML = "النص طويل جدًا لتشفيره داخل QR (" + text.length + " حرف). اختصره أو استخدم رابط مختصر.";
+      return;
     }
 
-    // غير رابط أو لم يفعل الاختصار -> نولد QR للنص كما هو
-    genQR(raw);
-    message.textContent = 'تم توليد QR من النص/الرابط المُدخل.';
-    // عرض رابط/نص للنسخ لو كان رابط
-    if(looksLikeUrl){
-      shortLabel.textContent = raw;
-      openShort.href = raw;
-      openShort.style.display = 'inline-block';
-      linkBox.style.display = 'flex';
-      copyBtn.style.display = 'inline-block';
-      copyBtn.onclick = ()=>{ navigator.clipboard.writeText(raw).then(()=>{ message.textContent='تم نسخ الرابط.'}).catch(()=>{message.textContent='فشل النسخ.'}) };
-    }
+    genQR(text);
   });
 
-  downloadBtn.addEventListener('click', ()=>{
+  downloadBtn.addEventListener('click',()=>{
     const img = qrcodeWrap.querySelector('img');
     if(img){
       const a = document.createElement('a');
@@ -180,7 +128,6 @@
       a.click();
     }
   });
-
 })();
 </script>
 </body>
